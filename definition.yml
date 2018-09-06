@@ -1,5 +1,6 @@
 id: urd
 docker_repository: dynverse/ti_urd
+singularity_collection: 1586
 container_url: https://github.com/dynverse/ti_urd
 name: URD
 type: algorithm
