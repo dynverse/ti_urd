@@ -8,14 +8,14 @@ Bootstrap: shub
 From: dynverse/dynwrap:bioc
 
 %labels
-    version 0.1.4
+    version 0.1.4.1
 
 %files
     . /code
 
 %post
     chmod -R 755 '/code'
-    apt-get install -y libudunits2-dev
+    apt-get update && apt-get install -y libudunits2-dev
     R -e 'devtools::install_github("farrellja/URD")'
 
 %runscript
