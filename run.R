@@ -1,3 +1,7 @@
+#!/usr/local/bin/Rscript
+
+task <- dyncli::main()
+
 library(jsonlite)
 library(readr)
 library(dplyr)
@@ -17,20 +21,12 @@ library(URD)
 #   ____________________________________________________________________________
 #   Load data                                                               ####
 
-data <- read_rds("/ti/input/data.rds")
-params <- jsonlite::read_json("/ti/input/params.json")
-
-#' @examples
-#' data <- dyntoy::generate_dataset(id = "test", num_cells = 300, num_features = 300, model = "bifurcating") %>% c(., .$prior_information)
-#' params <- yaml::read_yaml("containers/urd/definition.yml")$parameters %>%
-#'   {.[names(.) != "forbidden"]} %>%
-#'   map(~ .$default)
+count <- task$counts
+params <- task$params
+start_id <- task$priors$start_id
 
 #   ____________________________________________________________________________
 #   Infer trajectory                                                        ####
-count <- data$count
-start_id <- data$start_id
-
 if (params$sigma.use <= 0) {
   params$sigma.use <- NULL
 }
@@ -41,7 +37,7 @@ if (params$knn <= 0) {
   }
 }
 
-# just laod the data, filtering has already been done by dynnormalizer
+# just load the data, filtering has already been done
 urd <- createURD(count.data = t(count), min.cells = 0, min.counts = 0, min.genes = 0)
 
 # TIMING: done with preproc
@@ -153,6 +149,9 @@ urd.tree <- buildTree(
 # TIMING: done with method
 checkpoints$method_aftermethod <- as.numeric(Sys.time())
 
+#   ____________________________________________________________________________
+#   Save trajectory                                                         ####
+
 tree_layout <- urd.tree@tree$tree.layout
 subs <- tree_layout %>% filter(do.mean)
 tree_layout <- tree_layout %>%
@@ -181,15 +180,13 @@ milestone_network <- tree_layout %>%
   ) %>%
   select(from, to, length, directed)
 
-# return output
-output <- lst(
-  cell_ids = urd.tree@tree$cell.layout$cell,
-  milestone_network = milestone_network,
-  progressions = progressions,
-  timings = checkpoints
-)
 
-#   ____________________________________________________________________________
-#   Save output                                                             ####
+output <-
+  dynwrap::wrap_data(cell_ids = urd.tree@tree$cell.layout$cell) %>%
+  dynwrap::add_trajectory(
+    milestone_network = milestone_network,
+    progressions = progressions
+  )  %>%
+  dynwrap::add_timings(timings = checkpoints)
 
-write_rds(output, "/ti/output/output.rds")
+dyncli::write_output(output, task$output)

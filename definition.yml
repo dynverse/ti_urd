@@ -1,173 +1,204 @@
-id: urd
-docker_repository: dynverse/ti_urd
-singularity_collection: 1586
-container_url: https://github.com/dynverse/ti_urd
-name: URD
-source: tool
-doi: 10.1126/science.aar3131
-google_scholar_cluster_id: '1243230199939989249'
-platform: R
-trajectory_types:
-- linear
-- bifurcation
-- convergence
-- multifurcation
-- binary_tree
-- tree
-topology_inference: free
-license: GPL-3
-publication_date: '2018-04-26'
-code_url: https://github.com/farrellja/URD
+method:
+  id: urd
+  name: URD
+  tool_id: urd
+  source: tool
+  platform: R
+  url: https://github.com/farrellja/URD
+  license: GPL-3
+  authors:
+  - given: Jeffrey A.
+    family: Farrell
+    email: jfarrell@g.harvard.edu
+    github: farrellja
+
+manuscript:
+  doi: 10.1126/science.aar3131
+  google_scholar_cluster_id: '1243230199939989249'
+  preprint_date:
+  publication_date:
+
+container:
+  url: https://github.com/dynverse/ti_urd
+  docker: dynverse/ti_urd
+
+wrapper:
+  type: trajectory
+  topology_inference: free
+  trajectory_types:
+  - linear
+  - bifurcation
+  - convergence
+  - multifurcation
+  - binary_tree
+  - tree
+  example: /code/example.R
+  input_required:
+  - counts
+  - start_id
+
+
 parameters:
-  knn:
+  - id: knn
     type: integer
     default: 0
-    lower: 0
-    upper: 50
+    distribution:
+      type: uniform
+      lower: 0
+      upper: 50
     description: Number of nearest neighbors to use. `0` takes a guess.
-  sigma.use:
+  - id: sigma.use
     type: numeric
     default: 0.0
-    lower: 0.0
-    upper: 1.0
+    distribution:
+      type: uniform
+      lower: 0.0
+      upper: 1.0
     description: Kernel width to use for the diffusion map. `0` uses destiny's global auto-detection procedure.
-  distance:
-    type: discrete
+  - id: distance
+    type: character
     default: euclidean
     values:
     - euclidean
     - cosine
     - rankcor
     description: Distance metric to use for determining transition probabilities.
-  n_floods:
+  - id: n_floods
     type: integer
     default: 20
-    lower: 5
-    upper: 50
+    distribution:
+      type: uniform
+      lower: 5
+      upper: 50
     description: Number of simulations to perform and average.
-  stability.div:
+  - id: stability.div
     type: numeric
     default: 10
-    lower: 2
-    upper: 50
+    distribution:
+      type: uniform
+      lower: 2
+      upper: 50
     description: Number of simulation subsamplings to calculate.
-  mp.factor:
+  - id: mp.factor
     type: numeric
     default: 1
-    lower: 0
-    upper: 10
+    distribution:
+      type: uniform
+      lower: 0
+      upper: 10
     description: Retain PCs than are this factor more than the estimated maximum singular value expected or random data. This is useful in cases when there are many PCs that have standard deviations just above that expected by random, which probably represent noise and should be excluded.
-  perplexity:
+  - id: perplexity
     type: numeric
     default: 30
-    lower: 0
-    upper: 100
+    distribution:
+      type: uniform
+      lower: 0
+      upper: 100
     description: Perplexity parameter for the tSNE.
-  theta:
+  - id: theta
     type: numeric
     default: 0.5
-    lower: 0
-    upper: 1
+    distribution:
+      type: uniform
+      lower: 0
+      upper: 1
     description: Speed/accuracy trade-off for Barnes-Hut approximation of tSNE. 0 is exact tSNE, higher is less accurate.
-  max_iter:
+  - id: max_iter
     type: integer
     default: 1000
-    lower: 100
-    upper: 10000
+    distribution:
+      type: expuniform
+      lower: 100
+      upper: 10000
     description: Number of nearest neighbors to use. `0` takes a guess.
-    distribution: expuniform
-  num.nn:
+  - id: num.nn
     type: integer
     default: 30
-    lower: 10
-    upper: 100
+    distribution:
+      type: expuniform
+      lower: 10
+      upper: 100
     description: How many nearest-neighbors to use in the k-nn graph.
-    distribution: expuniform
-  do.jaccard:
+  - id: do.jaccard
     type: logical
     default: TRUE
     description: Weight edges in the k-nn graph according to their Jaccard overlap?
-  optimal.cells.forward:
+  - id: optimal.cells.forward
     type: numeric
     default: 20
-    lower: 5
-    upper: 100
+    distribution:
+      type: expuniform
+      lower: 5
+      upper: 100
     description: The number of cells in the direction specified by pseudotime.direction at which the logistic should reach 1-asymptote.
-    distribution: expuniform
-  max.cells.back:
+  - id: max.cells.back
     type: numeric
     default: 40
-    lower: 5
-    upper: 200
+    distribution:
+      type: expuniform
+      lower: 5
+      upper: 200
     description: The number of cells in the direction opposite from that specified by pseudotime.direction at which the logistic should reach asymptote.
-    distribution: expuniform
-  n.per.tip:
+  - id: n.per.tip
     type: integer
     default: 25000
-    lower: 100
-    upper: 1000000
+    distribution:
+      type: expuniform
+      lower: 100
+      upper: 1000000
     description: Number of walks to do per tip.
-    distribution: expuniform
-  root.visits:
+  - id: root.visits
     type: integer
     default: 1
-    lower: 1
-    upper: 5
+    distribution:
+      type: uniform
+      lower: 1
+      upper: 5
     description: Number of steps to take that visit a root.cell before stopping.
-  max.steps:
+  - id: max.steps
     type: integer
     default: 25000
-    lower: 100
-    upper: 1000000
+    distribution:
+      type: expuniform
+      lower: 100
+      upper: 1000000
     description: Number of walks to do per tip.
-    distribution: expuniform
-  n.subsample:
+  - id: n.subsample
     type: integer
     default: 10
-    lower: 2
-    upper: 100
+    distribution:
+      type: expuniform
+      lower: 2
+      upper: 100
     description: Number of subsamplings to perform for calculating stability.
-    distribution: expuniform
-  divergence.method:
-    type: discrete
+  - id: divergence.method
+    type: character
     default: ks
     values:
     - ks
     - preference
     description: Distance metric to use for determining transition probabilities.
-  cells.per.pseudotime.bin:
+  - id: cells.per.pseudotime.bin
     type: integer
     default: 80
-    lower: 10
-    upper: 1000
+    distribution:
+      type: expuniform
+      lower: 10
+      upper: 1000
     description: Approximate number of cells to assign to each pseudotime bin for branchpoint finding.
-    distribution: expuniform
-  bins.per.pseudotime.window:
+  - id: bins.per.pseudotime.window
     type: integer
     default: 5
-    lower: 2
-    upper: 20
+    distribution:
+      type: uniform
+      lower: 2
+      upper: 20
     description: Width of moving window in pseudotime used for branchpoint finding, in terms of bins.
-  p.thresh:
+  - id: p.thresh
     type: numeric
     default: 0.01
-    lower: 0.00001
-    upper: 1
+    distribution:
+      type: expuniform
+      lower: 0.00001
+      upper: 1
     description: p-value threshold to use in determining whether visitation is significantly different from pairs of tips
-    distribution: expuniform
-input:
-  format: rds
-  required:
-  - counts
-  - start_id
-output:
-  format: rds
-  outputs:
-  - trajectory
-  - timings
-wrapper_type: trajectory
-authors:
-- given: Jeffrey A.
-  family: Farrell
-  email: jfarrell@g.harvard.edu
-  github: farrellja
