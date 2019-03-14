@@ -31,11 +31,9 @@ wrapper:
   - multifurcation
   - binary_tree
   - tree
-  example: /code/example.R
   input_required:
   - counts
   - start_id
-
 
 parameters:
   - id: knn
