@@ -104,7 +104,7 @@ urd.ptlogistic <- pseudotimeDetermineLogistic(
 urd.biased.tm <- as.matrix(pseudotimeWeightTransitionMatrix(
   urd,
   "pseudotime",
-  logistic.parameters = urd.ptlogistic
+  logistic.params = urd.ptlogistic
 ))
 
 # Simulate the biased random walks from each tip
