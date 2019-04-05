@@ -1,8 +1,10 @@
-library(jsonlite)
-library(readr)
-library(dplyr)
-library(tidyr)
-library(purrr)
+#!/usr/local/bin/Rscript
+
+task <- dyncli::main()
+
+library(dplyr, warn.conflicts = FALSE)
+library(tidyr, warn.conflicts = FALSE)
+library(purrr, warn.conflicts = FALSE)
 
 # Hotfix for drop = FALSE problem in URD
 URD:::floodPseudotimeCalc %>%
@@ -12,36 +14,28 @@ URD:::floodPseudotimeCalc %>%
   eval(envir = environment(URD:::floodPseudotimeCalc)) %>%
   utils::assignInNamespace("floodPseudotimeCalc", ., ns = "URD")
 
-library(URD)
+library(URD, warn.conflicts = FALSE)
 
 #   ____________________________________________________________________________
 #   Load data                                                               ####
 
-data <- read_rds("/ti/input/data.rds")
-params <- jsonlite::read_json("/ti/input/params.json")
-
-#' @examples
-#' data <- dyntoy::generate_dataset(id = "test", num_cells = 300, num_features = 300, model = "bifurcating") %>% c(., .$prior_information)
-#' params <- yaml::read_yaml("containers/urd/definition.yml")$parameters %>%
-#'   {.[names(.) != "forbidden"]} %>%
-#'   map(~ .$default)
+count <- task$counts
+parameters <- task$parameters
+start_id <- task$priors$start_id
 
 #   ____________________________________________________________________________
 #   Infer trajectory                                                        ####
-count <- data$count
-start_id <- data$start_id
-
-if (params$sigma.use <= 0) {
-  params$sigma.use <- NULL
+if (parameters$sigma.use <= 0) {
+  parameters$sigma.use <- NULL
 }
-if (params$knn <= 0) {
-  params$knn <- destiny:::find_dm_k(nrow(count))
-  if (params$knn >= nrow(count)) {
-    params$knn <- round(log10(nrow(count)) * 10)
+if (parameters$knn <= 0) {
+  parameters$knn <- destiny:::find_dm_k(nrow(count))
+  if (parameters$knn >= nrow(count)) {
+    parameters$knn <- round(log10(nrow(count)) * 10)
   }
 }
 
-# just laod the data, filtering has already been done by dynnormalizer
+# just load the data, filtering has already been done
 urd <- createURD(count.data = t(count), min.cells = 0, min.counts = 0, min.genes = 0)
 
 # TIMING: done with preproc
@@ -50,16 +44,16 @@ checkpoints <- list(method_afterpreproc = as.numeric(Sys.time()))
 # Calculate Diffusion Map
 urd <- calcDM(
   urd,
-  knn = params$knn,
-  sigma.use = params$sigma.use,
-  distance = params$distance
+  knn = parameters$knn,
+  sigma.use = parameters$sigma.use,
+  distance = parameters$distance
 )
 
 # Then we run 'flood' simulations
 urd.floods <- floodPseudotime(
   urd,
   root.cells = start_id,
-  n = params$n_floods,
+  n = parameters$n_floods,
   minimum.cells.flooded = 0,
   verbose = FALSE
 )
@@ -69,29 +63,29 @@ urd <- floodPseudotimeProcess(
   urd,
   urd.floods,
   floods.name = "pseudotime",
-  stability.div = params$stability.div
+  stability.div = parameters$stability.div
 )
 
 # Calculate PCA and tSNE
 urd <- calcPCA(
   urd,
-  mp.factor = params$mp.factor
+  mp.factor = parameters$mp.factor
 )
 urd <- calcTsne(
   urd,
-  perplexity = params$perplexity,
-  theta = params$theta,
-  max_iter = params$max_iter
+  perplexity = parameters$perplexity,
+  theta = parameters$theta,
+  max_iter = parameters$max_iter
 )
 
 # Calculate graph clustering of these cells
 urd <- graphClustering(
   urd,
-  num.nn = params$num.nn,
-  do.jaccard = params$do.jaccard,
+  num.nn = parameters$num.nn,
+  do.jaccard = parameters$do.jaccard,
   method = "Louvain"
 )
-cluster_name <- paste0("Louvain-", params$num.nn)
+cluster_name <- paste0("Louvain-", parameters$num.nn)
 
 # Determine the parameters of the logistic used to bias the transition probabilities. The procedure
 # is relatively robust to this parameter, but the cell numbers may need to be modified for larger
@@ -99,8 +93,8 @@ cluster_name <- paste0("Louvain-", params$num.nn)
 urd.ptlogistic <- pseudotimeDetermineLogistic(
   urd,
   "pseudotime",
-  optimal.cells.forward = params$optimal.cells.forward,
-  max.cells.back = params$max.cells.back,
+  optimal.cells.forward = parameters$optimal.cells.forward,
+  max.cells.back = parameters$max.cells.back,
   do.plot = FALSE
 )
 
@@ -117,8 +111,8 @@ urd.walks <- simulateRandomWalksFromTips(
   tip.group.id = cluster_name,
   root.cells = start_id,
   transition.matrix = urd.biased.tm,
-  n.per.tip = params$n.per.tip,
-  root.visits = params$root.visits,
+  n.per.tip = parameters$n.per.tip,
+  root.visits = parameters$root.visits,
   max.steps = 5000,
   verbose = FALSE
 )
@@ -127,7 +121,7 @@ urd.walks <- simulateRandomWalksFromTips(
 urd <- processRandomWalksFromTips(
   urd,
   urd.walks,
-  n.subsample = params$n.subsample,
+  n.subsample = parameters$n.subsample,
   verbose = FALSE
 )
 
@@ -141,10 +135,10 @@ urd.tree <- buildTree(
   urd.tree,
   pseudotime = "pseudotime",
   tips.use = tips.use,
-  divergence.method = params$divergence.method,
-  cells.per.pseudotime.bin = params$cells.per.pseudotime.bin,
-  bins.per.pseudotime.window = params$bins.per.pseudotime.window,
-  p.thresh = params$p.thresh,
+  divergence.method = parameters$divergence.method,
+  cells.per.pseudotime.bin = parameters$cells.per.pseudotime.bin,
+  bins.per.pseudotime.window = parameters$bins.per.pseudotime.window,
+  p.thresh = parameters$p.thresh,
   dendro.cell.jitter = 0,
   dendro.cell.dist.to.tree = 0,
   save.all.breakpoint.info = TRUE
@@ -152,6 +146,9 @@ urd.tree <- buildTree(
 
 # TIMING: done with method
 checkpoints$method_aftermethod <- as.numeric(Sys.time())
+
+#   ____________________________________________________________________________
+#   Save trajectory                                                         ####
 
 tree_layout <- urd.tree@tree$tree.layout
 subs <- tree_layout %>% filter(do.mean)
@@ -181,15 +178,13 @@ milestone_network <- tree_layout %>%
   ) %>%
   select(from, to, length, directed)
 
-# return output
-output <- lst(
-  cell_ids = urd.tree@tree$cell.layout$cell,
-  milestone_network = milestone_network,
-  progressions = progressions,
-  timings = checkpoints
-)
 
-#   ____________________________________________________________________________
-#   Save output                                                             ####
+output <-
+  dynwrap::wrap_data(cell_ids = urd.tree@tree$cell.layout$cell) %>%
+  dynwrap::add_trajectory(
+    milestone_network = milestone_network,
+    progressions = progressions
+  )  %>%
+  dynwrap::add_timings(timings = checkpoints)
 
-write_rds(output, "/ti/output/output.rds")
+dyncli::write_output(output, task$output)
