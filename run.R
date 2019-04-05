@@ -2,11 +2,9 @@
 
 task <- dyncli::main()
 
-library(jsonlite)
-library(readr)
-library(dplyr)
-library(tidyr)
-library(purrr)
+library(dplyr, warn.conflicts = FALSE)
+library(tidyr, warn.conflicts = FALSE)
+library(purrr, warn.conflicts = FALSE)
 
 # Hotfix for drop = FALSE problem in URD
 URD:::floodPseudotimeCalc %>%
@@ -16,7 +14,7 @@ URD:::floodPseudotimeCalc %>%
   eval(envir = environment(URD:::floodPseudotimeCalc)) %>%
   utils::assignInNamespace("floodPseudotimeCalc", ., ns = "URD")
 
-library(URD)
+library(URD, warn.conflicts = FALSE)
 
 #   ____________________________________________________________________________
 #   Load data                                                               ####
